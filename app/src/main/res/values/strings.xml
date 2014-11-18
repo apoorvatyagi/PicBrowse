@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- APP FIXED STRINGS -->
+    <string name="app_name">PicBrowse</string>
+    <string name="action_settings">Settings</string>
+
+    <!--EDIT TEXT HINTS -->
+    <string name="hint_search">Search for pictures of…</string>
+
+    <!--BUTTON TEXTS -->
+    <string name="search">Search</string>
+
+</resources>
+

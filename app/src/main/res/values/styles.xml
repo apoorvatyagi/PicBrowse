@@ -1,0 +1,15 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+        <item name="android:webViewStyle">@style/Theme.PicBrowse.WebViewDialog</item>
+    </style>
+
+    <style name="Theme.PicBrowse.WebViewDialog" parent="@android:style/Theme.Dialog">
+
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowCloseOnTouchOutside">false</item>
+    </style>
+
+</resources>
