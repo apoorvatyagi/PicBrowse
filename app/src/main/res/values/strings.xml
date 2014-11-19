@@ -8,8 +8,11 @@
     <!--EDIT TEXT HINTS -->
     <string name="hint_search">Search for pictures of…</string>
 
-    <!--BUTTON TEXTS -->
+    <!--BUTTON and TextView TEXTS -->
     <string name="search">Search</string>
+    <string name="loading">Loading...</string>
+
+
 
 </resources>
 

@@ -43,15 +43,19 @@
         android:visibility="gone" />
 
     <LinearLayout
+        android:id="@+id/ll_container_gridview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="16dp"
-        android:animateLayoutChanges="true">
+        android:animateLayoutChanges="true"
+        android:visibility="visible"
+        android:orientation="vertical">
 
         <GridView
             android:id="@+id/gridview_pics"
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
+            android:layout_height="0px"
+            android:layout_weight="1"
             android:columnWidth="90dp"
             android:gravity="center"
             android:horizontalSpacing="10dp"
@@ -59,6 +63,16 @@
             android:stretchMode="columnWidth"
             android:verticalSpacing="10dp"
             android:visibility="visible"></GridView>
+
+        <TextView
+            android:id="@+id/tv_loading"
+            android:textAppearance="?android:textAppearanceMedium"
+            android:gravity="center"
+            android:textStyle="italic"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/loading"
+            android:layout_weight="0.05" />
     </LinearLayout>
 
 

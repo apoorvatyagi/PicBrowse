@@ -28,6 +28,8 @@ public class ViewImageActivity extends Activity {
 
         if (url != null && !url.equals("")) {
             mWebView.getSettings().setJavaScriptEnabled(true);
+            mWebView.getSettings().setUseWideViewPort(true);
+            mWebView.getSettings().setLoadWithOverviewMode(true);
             mWebView.setWebViewClient(new WebViewClient());
             mWebView.loadUrl(url);
 

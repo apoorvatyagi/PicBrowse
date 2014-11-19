@@ -10,6 +10,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
@@ -36,11 +38,12 @@ public class MainActivity extends Activity {
     private EditText mETSearch;
     private Button mButtonSearch;
     private GridView mGridView;
-    private String mQueryTerm;
+    private ProgressBar mProgressLoading;
+    private TextView mTextLoading;
 
     private DisplayImageOptions mOptions;
 
-
+    private String mQueryTerm;
     private String mPreviousPostKind;
     private String mPreviousPostID;
     private List<RedditImage> mListOfRedditImages;
@@ -77,6 +80,8 @@ public class MainActivity extends Activity {
 
         mETSearch = (EditText) findViewById(R.id.et_search);
         mButtonSearch = (Button) findViewById(R.id.button_search);
+        mProgressLoading = (ProgressBar) findViewById(R.id.progressBar_loadingList);
+        mTextLoading = (TextView) findViewById(R.id.tv_loading);
 
         mButtonSearch.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -87,11 +92,27 @@ public class MainActivity extends Activity {
                 if (mQueryTerm.equals("")) {
                     return;
                 }
-                //After bad post with id 2lype6
-                String searchUrl = "http://www.reddit.com/r/pics.json?q=" + mQueryTerm + "&limit=2&after=t3_2lype6";
+
+                //Make string ready for url.
+                mQueryTerm = mQueryTerm.replace(" ", "+");
+
+                String searchUrl = "http://www.reddit.com/r/pics/search.json?q=" + mQueryTerm + "&sort=new&limit=20&restrict_sr=on";
+
+                if (mLoaderTask != null && mLoaderTask.getStatus() != AsyncTask.Status.FINISHED) {
+                    Log.i(TAG, "Task in progress. Cancelling...");
+                    mLoaderTask.cancel(true);
+
+                }
+                Log.i(TAG, "Executing fresh loading task.");
+
+                resetAdapter();
+                resetGridviewPosition();
 
                 mLoaderTask = new LoadImages();
                 mLoaderTask.execute(searchUrl);
+
+                hideGridView();
+                showLoadingProgress();
             }
         });
 
@@ -104,14 +125,20 @@ public class MainActivity extends Activity {
                 if (mLoaderTask != null && mLoaderTask.getStatus() != AsyncTask.Status.FINISHED) {
                     Log.i(TAG, "Still loading.. dont do anything.");
                 } else {
-                    String url = "http://www.reddit.com/r/pics.json?q=" + mQueryTerm + "&limit=2&after=" + mPreviousPostKind + "_" + mPreviousPostID;
+                    String url = "http://www.reddit.com/r/pics/search.json?q=" + mQueryTerm + "&sort=new&limit=20&restrict_sr=on&after=" + mPreviousPostKind + "_" + mPreviousPostID;
                     mLoaderTask = new LoadImages();
                     mLoaderTask.execute(url);
+                    showGridView();
+                    showLoadingText();
                 }
 
             }
 
         });
+
+        hideGridView();
+        hideLoadingProgress();
+        hideLoadingText();
 
     }
 
@@ -134,6 +161,43 @@ public class MainActivity extends Activity {
 
     }
 
+    private void showLoadingProgress() {
+        mProgressLoading.setVisibility(View.VISIBLE);
+    }
+
+    private void hideLoadingProgress() {
+        mProgressLoading.setVisibility(View.GONE);
+    }
+
+    private void showGridView() {
+        hideLoadingProgress();
+        mGridView.setVisibility(View.VISIBLE);
+    }
+
+    private void hideGridView() {
+        mGridView.setVisibility(View.GONE);
+        hideLoadingText();
+    }
+
+    private void hideLoadingText() {
+        mTextLoading.setVisibility(View.GONE);
+    }
+
+    private void showLoadingText() {
+        mTextLoading.setVisibility(View.VISIBLE);
+    }
+
+    private void resetGridviewPosition(){
+        mGridView.smoothScrollToPosition(0);
+    }
+
+    private void resetAdapter(){
+        mListOfRedditImages.clear();
+        mImageAdapter.clear();
+        mImageAdapter.notifyDataSetChanged();
+    }
+
+
 
     /**
      * ************************
@@ -150,10 +214,12 @@ public class MainActivity extends Activity {
 
             if (result == 1) {
                 Log.i(TAG, "List of reddit images retrieved.. Refreshing adapter.");
+                showGridView();
+                hideLoadingProgress();
+                hideLoadingText();
                 mImageAdapter.notifyDataSetChanged();
-
             } else if (result == 0) {
-                Log.i(TAG, "Some error retrieving.");
+                Log.i(TAG, "Some error retrieving or cancelled.");
             }
 
         }
@@ -164,9 +230,14 @@ public class MainActivity extends Activity {
             String searchUrl = params[0];
             int countOfImagesRetrieved = 0;
 
-            //Some responses may be skipped if they don't contain an image. We always want 20 pictures returned.
+            //Some responses may be skipped if they don't contain an image. We want to display at least 15 images.
             //Keep searching until the number is reached.
-            while (countOfImagesRetrieved < 20) {
+            while (countOfImagesRetrieved < 15) {
+
+                if (isCancelled()) {
+                    Log.i(TAG, "Task cancelled. Returning...");
+                    return 0;
+                }
 
                 Log.i(TAG, "Search URL: " + searchUrl);
 
@@ -272,11 +343,18 @@ public class MainActivity extends Activity {
                         Log.i(TAG, "thumbnail_link: " + thumbnail_link);
                         Log.i(TAG, "url_link: " + url_link);
 
+                        if (isCancelled()) {
+                            Log.i(TAG, "Task cancelled. Returning...");
+                            return 0;
+                        }
+
                         //If thumbnail link isn't a URL, skip it.
-                        if (thumbnail_link.equals("self")) {
+                        if (thumbnail_link.equals("self") || thumbnail_link.equals("") || thumbnail_link.equals("nsfw") || thumbnail_link.equals("default")) {
                             Log.i(TAG, "Skipped");
                         } else {
                             //Add it to the list of ALL images returned
+                            Log.i(TAG, "Added");
+                            Log.i(TAG, "Added thumbail_link: " + thumbnail_link);
                             mListOfRedditImages.add(singleImage);
                             countOfImagesRetrieved++;
                         }
@@ -284,7 +362,7 @@ public class MainActivity extends Activity {
                     }
 
                     //URL for next search, only two at a time. Perform slice at the last data returned.
-                    searchUrl = "http://www.reddit.com/r/pics.json?q=" + mQueryTerm + "&limit=2&after=" + mPreviousPostKind + "_" + mPreviousPostID;
+                    searchUrl = "http://www.reddit.com/r/pics/search.json?q=" + mQueryTerm + "&sort=new&limit=20&restrict_sr=on&after=" + mPreviousPostKind + "_" + mPreviousPostID;
                 } catch (Exception e) {
                     Log.e(TAG, "Exception reading JSON: " + e.getMessage());
                     return 0;
